@@ -1,0 +1,26 @@
+# Environment & secrets
+.env
+.env.*
+
+# Trained model artifacts
+model.pkl
+label_encoder.pkl
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
