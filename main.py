@@ -25,6 +25,8 @@ app.add_middleware(
 )
 
 
+clients = set()
+
 class PredictRequest(BaseModel):
     Soil_Moisture: float
     Ambient_Temperature: float
@@ -56,20 +58,26 @@ def predict_endpoint(request: PredictRequest):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    clients.append(websocket)
+
     try:
         while True:
             raw = await websocket.receive_text()
-            try:
-                data = json.loads(raw)
-                missing = [f for f in FEATURES if f not in data]
-                if missing:
-                    await websocket.send_text(json.dumps({"error": f"Missing fields: {missing}"}))
-                    continue
-                label, confidence = predict(data)
-                await websocket.send_text(json.dumps({"prediction": label, "confidence": round(confidence, 4)}))
-            except json.JSONDecodeError:
-                await websocket.send_text(json.dumps({"error": "Invalid JSON"}))
-            except Exception as e:
-                await websocket.send_text(json.dumps({"error": str(e)}))
+            data = json.loads(raw)
+
+           
+            label, confidence = predict(data)
+
+           
+            response = json.dumps({
+                "input": data,
+                "prediction": label,
+                "confidence": round(confidence, 4)
+            })
+
+          
+            for client in clients:
+                await client.send_text(response)
+
     except WebSocketDisconnect:
-        pass
+        clients.remove(websocket)
