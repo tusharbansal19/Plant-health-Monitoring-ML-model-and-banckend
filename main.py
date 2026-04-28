@@ -58,7 +58,8 @@ def predict_endpoint(request: PredictRequest):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    clients.append(websocket)
+    clients.add(websocket)
+
 
     try:
         while True:
