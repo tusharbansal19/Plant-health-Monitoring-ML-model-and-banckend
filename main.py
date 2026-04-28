@@ -67,6 +67,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
            
             label, confidence = predict(data)
+            print("label",label)
+            print("confidence",confidence)
+            print("data",data)
 
            
             response = json.dumps({
