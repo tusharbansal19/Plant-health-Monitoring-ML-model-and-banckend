@@ -85,3 +85,24 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         clients.remove(websocket)
+
+@app.websocket("/ws1")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                data = json.loads(raw)
+                missing = [f for f in FEATURES if f not in data]
+                if missing:
+                    await websocket.send_text(json.dumps({"error": f"Missing fields: {missing}"}))
+                    continue
+                label, confidence = predict(data)
+                await websocket.send_text(json.dumps({"prediction": label, "confidence": round(confidence, 4)}))
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"error": "Invalid JSON"}))
+            except Exception as e:
+                await websocket.send_text(json.dumps({"error": str(e)}))
+    except WebSocketDisconnect:
+        pass
