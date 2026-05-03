@@ -2,7 +2,12 @@
 .env
 .env.*
 
+# User data & logs
+users.json
+*.log
+
 # Trained model artifacts
+# (Keep model.pkl and label_encoder.pkl - they should be committed)
 
 # Python cache
 __pycache__/
@@ -22,3 +27,15 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Node modules (for frontend)
+frountend/node_modules/
+frountend/.vite/
+frountend/dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

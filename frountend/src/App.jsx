@@ -1,5 +1,5 @@
-import { useState,useEffect  } from 'react'
-import './App.css'
+import { useEffect, useState } from 'react';
+import './App.css';
 
 
 function App() {
@@ -8,7 +8,18 @@ function App() {
   const [status, setStatus] = useState("Disconnected");
 
   useEffect(() => {
-    const socket = new WebSocket("ws://127.0.0.1:8001/ws");
+    let wsUrl;
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isLocalhost) {
+      // Local development - connect to local backend
+      wsUrl = 'ws://127.0.0.1:8001/ws';
+    } else {
+      // Production - connect to Render with secure WebSocket
+      wsUrl = 'wss://plant-health-monitor-backend.onrender.com/ws';
+    }
+    
+    const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
       setStatus("Connected ✅");
@@ -59,8 +70,7 @@ function App() {
       setStatus("Not Connected");
     }
   };
-    }
-  };
+   
 
   return (
     <div style={{ padding: 20 }}>

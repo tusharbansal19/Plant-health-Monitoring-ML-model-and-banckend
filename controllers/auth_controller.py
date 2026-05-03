@@ -6,17 +6,31 @@ from utils.auth_utils import (
     create_refresh_token, decode_refresh_token
 )
 
-USERS_FILE = "users.json"
+# Use absolute path or temp directory for production
+USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "users.json")
 
 def load_users():
-    if not os.path.exists(USERS_FILE):
+    try:
+        if not os.path.exists(USERS_FILE):
+            return {}
+        with open(USERS_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading users: {e}")
         return {}
-    with open(USERS_FILE, "r") as f:
-        return json.load(f)
 
 def save_users(users):
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=4)
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=4)
+    except Exception as e:
+        print(f"Error saving users: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save user data"
+        )
 
 class AuthController:
     @staticmethod
