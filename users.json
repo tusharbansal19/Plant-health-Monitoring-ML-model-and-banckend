@@ -3,5 +3,15 @@
         "username": "john_doe",
         "email": "john@example.com",
         "password": "$2b$12$anifPfcDJ4sdRbhLrwPMxO2NjBEWi7IaxV0.DoMU35Cw3SAtsv6QW"
+    },
+    "localuser658666": {
+        "username": "localuser658666",
+        "email": "localuser658666@example.com",
+        "password": "$2b$12$iplixvC39mEILicvm7iXiO85eaV3A48f/jPYzDaKI.U0EXNOdTMi2"
+    },
+    "localuser218453": {
+        "username": "localuser218453",
+        "email": "localuser218453@example.com",
+        "password": "$2b$12$IYzJyjjz152rDVYXYn1PJ.MvIsnNzYDRMTsiqTTlTQhIQoNaTe1q2"
     }
 }

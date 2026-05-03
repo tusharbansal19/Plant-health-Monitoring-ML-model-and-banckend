@@ -9,15 +9,10 @@ function App() {
 
   useEffect(() => {
     let wsUrl;
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    
-    if (isLocalhost) {
+   
+      wsUrl = 'wss://plant-health-monitor-banckend.onrender.com/ws';
       // Local development - connect to local backend
-      wsUrl = 'ws://127.0.0.1:8001/ws';
-    } else {
-      // Production - connect to Render with secure WebSocket
-      wsUrl = 'wss://plant-health-monitor-backend.onrender.com/ws';
-    }
+   
     
     const socket = new WebSocket(wsUrl);
 

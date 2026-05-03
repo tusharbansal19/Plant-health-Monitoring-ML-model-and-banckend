@@ -21,11 +21,12 @@ def signup(user: UserSignup):
 def login(user: UserLogin, response: Response):
     """Login with username/email and password. Returns access and refresh tokens."""
     login_result = AuthController.login(user.model_dump())
+    token_data = login_result["token"]
     
     # Set access token as httponly cookie
     response.set_cookie(
         key="access_token",
-        value=login_result["access_token"],
+        value=token_data["access_token"],
         httponly=True,
         max_age=1800,  # 30 mins
         samesite="lax"
@@ -34,7 +35,7 @@ def login(user: UserLogin, response: Response):
     # Set refresh token as httponly cookie (optional, can also send in body)
     response.set_cookie(
         key="refresh_token",
-        value=login_result["refresh_token"],
+        value=token_data["refresh_token"],
         httponly=True,
         max_age=604800,  # 7 days
         samesite="lax"
@@ -56,10 +57,19 @@ def refresh_token(request: RefreshTokenRequest):
 
 
 @router.post("/logout")
-def logout(response: Response, current_user: str = Depends(get_current_user)):
+def logout(request: Request, response: Response, current_user: str = Depends(get_current_user)):
     """Logout by clearing cookies and blacklisting token"""
-    # Get token from cookies or headers for blacklisting
-    # This is a best-effort blacklist (for production use Redis)
+    # Best-effort token blacklist (for production use Redis).
+    cookie_token = request.cookies.get("access_token")
+    auth_header = request.headers.get("Authorization", "")
+    header_token = None
+    if auth_header.lower().startswith("bearer "):
+        header_token = auth_header.split(" ", 1)[1].strip()
+
+    token_to_blacklist = cookie_token or header_token
+    if token_to_blacklist:
+        add_token_to_blacklist(token_to_blacklist)
+
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
     return {"message": "Logout successful"}
