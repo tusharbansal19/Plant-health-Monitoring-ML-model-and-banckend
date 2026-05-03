@@ -33,6 +33,15 @@ app.add_middleware(
 
 app.include_router(auth_routes.router)
 
+# Start background keep-alive pinger if available
+try:
+    from keep_alive import start_keep_alive
+    @app.on_event("startup")
+    def _start_keep_alive():
+        start_keep_alive()
+except Exception:
+    pass
+
 # Connected WebSocket clients
 clients = set()
 
