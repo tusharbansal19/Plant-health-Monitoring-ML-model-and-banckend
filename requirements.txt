@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
+pydantic[email]
 scikit-learn
 pandas
 numpy
@@ -7,3 +8,6 @@ joblib
 websockets
 python-multipart
 python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt

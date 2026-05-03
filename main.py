@@ -6,7 +6,10 @@ import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from routes import auth_routes
+from middleware.auth_middleware import get_current_user
+from fastapi import Depends
+from schemas.example_schemas import PredictRequest
 
 load_dotenv()
 
@@ -15,7 +18,11 @@ le = joblib.load(os.getenv("ENCODER_PATH", "label_encoder.pkl"))
 
 FEATURES = ["Soil_Moisture", "Ambient_Temperature", "Humidity"]
 
-app = FastAPI(title="Plant Health Prediction API")
+app = FastAPI(
+    title="Plant Health Prediction API",
+    description="Predict plant health status using ML model with JWT authentication",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,17 +31,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_routes.router)
 
+# Connected WebSocket clients
 clients = set()
-
-class PredictRequest(BaseModel):
-    Soil_Moisture: float
-    Ambient_Temperature: float
-    Humidity: float
 
 
 def predict(data: dict):
-    X = pd.DataFrame([[data[f] for f in FEATURES]], columns=FEATURES)
+    feature_values = [data[f] for f in FEATURES]
+    X = pd.DataFrame([feature_values], columns=FEATURES)
     pred = model.predict(X)[0]
     confidence = float(np.max(model.predict_proba(X)[0]))
     label = le.inverse_transform([pred])[0]
@@ -47,7 +52,7 @@ def health():
 
 
 @app.post("/predict")
-def predict_endpoint(request: PredictRequest):
+def predict_endpoint(request: PredictRequest, current_user: str = Depends(get_current_user)):
     try:
         label, confidence = predict(request.model_dump())
         return {"prediction": label, "confidence": round(confidence, 4)}
@@ -60,35 +65,43 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     clients.add(websocket)
 
-
     try:
         while True:
-            raw = await websocket.receive_text()
-            data = json.loads(raw)
+            try:
+                raw = await websocket.receive_text()
+                data = json.loads(raw)
 
-           
-            label, confidence = predict(data)
-            print("label",label)
-            print("confidence",confidence)
-            print("data",data)
+                missing = [f for f in FEATURES if f not in data]
+                if missing:
+                    await websocket.send_text(json.dumps({"error": f"Missing fields: {missing}"}))
+                    continue
 
-           
-            response = json.dumps({
-                "input": data,
-                "prediction": label,
-                "confidence": round(confidence, 4)
-            })
+                label, confidence = predict(data)
+                response = json.dumps({
+                    "input": data,
+                    "prediction": label,
+                    "confidence": round(confidence, 4)
+                })
 
-          
-            for client in clients:
-                await client.send_text(response)
+                for client in clients:
+                    try:
+                        await client.send_text(response)
+                    except:
+                        pass
+
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"error": "Invalid JSON"}))
+            except Exception as e:
+                await websocket.send_text(json.dumps({"error": str(e)}))
 
     except WebSocketDisconnect:
-        clients.remove(websocket)
+        if websocket in clients:
+            clients.remove(websocket)
 
 @app.websocket("/ws1")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint_1(websocket: WebSocket):
     await websocket.accept()
+
     try:
         while True:
             raw = await websocket.receive_text()
